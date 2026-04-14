@@ -1,0 +1,27 @@
+<% content_for :head do %>
+  <%= stylesheet_link_tag "welcome" %>
+<% end %>
+
+<div id="splash-screen" class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+  <div class="text-center animate-fade-in">
+    <div class="mb-6">
+      <%= image_tag "rby_gem.png", class: "w-32 h-32 mx-auto", alt: "MiniMart POS" %>
+    </div>
+    
+    <!-- Powered by Ruby Text -->
+    <p class="text-gray-500 text-sm">Powered by Ruby</p>
+  </div>
+</div>
+
+<script>
+  // Fade out and redirect after 2.5 seconds
+  setTimeout(function() {
+    const splash = document.getElementById('splash-screen');
+    splash.style.transition = 'opacity 1s ease-in-out';
+    splash.style.opacity = '0';
+    
+    setTimeout(function() {
+      window.location.href = '/users/sign_in';
+    }, 1000);
+  }, 2500);
+</script>

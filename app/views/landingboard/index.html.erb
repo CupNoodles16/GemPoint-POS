@@ -1,0 +1,197 @@
+<div class="flex flex-col h-screen bg-gray-100">
+  <!-- Header -->
+  <header class="bg-green-600 text-white p-4 shadow-lg">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold">🏪 MiniMart POS</h1>
+        <p class="text-sm opacity-90">Point of Sale System</p>
+      </div>
+      <div class="text-right">
+        <div class="text-sm font-semibold">Cashier: Admin</div>
+        <div class="text-xs"><%= Time.current.strftime("%B %d, %Y %I:%M %p") %></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main POS Area - Tablet Optimized (Side by side on landscape) -->
+  <div class="flex flex-1 flex-col md:flex-row overflow-hidden">
+    
+    <!-- LEFT PANEL: Products Grid (60% width on tablet landscape) -->
+    <div class="md:w-3/5 overflow-y-auto p-4">
+      <!-- Barcode Search Bar -->
+      <div class="mb-4">
+        <input type="text" 
+               id="barcode-search" 
+               placeholder="🔍 Scan barcode or search product..." 
+               class="w-full p-4 text-lg border-2 border-gray-300 rounded-xl focus:outline-none focus:border-green-500"
+               autofocus>
+      </div>
+      
+      <!-- Product Grid - Touch Friendly -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <% Product.active.limit(12).each do |product| %>
+          <button class="product-btn bg-white rounded-xl shadow-md p-4 hover:shadow-lg active:scale-95 transition-all"
+                  data-product-id="<%= product.id %>"
+                  data-product-name="<%= product.name %>"
+                  data-product-price="<%= product.price %>">
+            <div class="text-lg font-semibold text-gray-800"><%= product.name %></div>
+            <div class="text-2xl text-green-600 font-bold mt-2">₱<%= product.price %></div>
+            <div class="text-sm text-gray-500 mt-1">Stock: <%= product.quantity %></div>
+          </button>
+        <% end %>
+      </div>
+    </div>
+    
+    <!-- RIGHT PANEL: Cart Sidebar (40% width on tablet landscape) -->
+    <div class="md:w-2/5 bg-white border-l border-gray-200 flex flex-col shadow-lg">
+      <div class="p-4 border-b bg-gray-50">
+        <h2 class="text-xl font-bold">🛒 Current Sale</h2>
+      </div>
+      
+      <!-- Cart Items Container -->
+      <div id="cart-items" class="flex-1 overflow-y-auto p-4">
+        <div class="text-center text-gray-400 mt-8">
+          <p class="text-4xl mb-2">🛍️</p>
+          <p>No items in cart</p>
+          <p class="text-sm">Tap products to add</p>
+        </div>
+      </div>
+      
+      <!-- Customer Selection (for credit sales) -->
+      <div class="p-4 border-t">
+        <button id="select-customer-btn" class="w-full bg-gray-100 text-gray-700 p-3 rounded-xl hover:bg-gray-200 transition">
+          👤 Select Customer (for credit)
+        </button>
+      </div>
+      
+      <!-- Total and Payment Section -->
+      <div class="border-t p-4 bg-gray-50">
+        <div class="flex justify-between text-2xl font-bold mb-4">
+          <span>TOTAL:</span>
+          <span id="cart-total" class="text-green-600">₱0.00</span>
+        </div>
+        
+        <!-- Large Touch-Friendly Payment Buttons -->
+        <div class="grid grid-cols-2 gap-3">
+          <button id="cash-payment-btn" class="bg-green-600 text-white py-4 rounded-xl text-lg font-semibold hover:bg-green-700 active:scale-95 transition">
+            💵 Cash
+          </button>
+          <button id="gcash-payment-btn" class="bg-blue-600 text-white py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 active:scale-95 transition">
+            📱 GCash
+          </button>
+          <button id="paymaya-payment-btn" class="bg-yellow-600 text-white py-4 rounded-xl text-lg font-semibold hover:bg-yellow-700 active:scale-95 transition">
+            💳 PayMaya
+          </button>
+          <button id="credit-payment-btn" class="bg-red-600 text-white py-4 rounded-xl text-lg font-semibold hover:bg-red-700 active:scale-95 transition">
+            📝 Credit
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Simple JavaScript for POS functionality -->
+<script>
+  let cart = [];
+  
+  // Add product to cart
+  document.querySelectorAll('.product-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const product = {
+        id: btn.dataset.productId,
+        name: btn.dataset.productName,
+        price: parseFloat(btn.dataset.productPrice),
+        quantity: 1
+      };
+      
+      // Check if product already in cart
+      const existing = cart.find(item => item.id === product.id);
+      if (existing) {
+        existing.quantity++;
+      } else {
+        cart.push(product);
+      }
+      
+      updateCartDisplay();
+    });
+  });
+  
+  // Update cart display
+  function updateCartDisplay() {
+    const cartContainer = document.getElementById('cart-items');
+    const totalElement = document.getElementById('cart-total');
+    
+    if (cart.length === 0) {
+      cartContainer.innerHTML = `
+        <div class="text-center text-gray-400 mt-8">
+          <p class="text-4xl mb-2">🛍️</p>
+          <p>No items in cart</p>
+          <p class="text-sm">Tap products to add</p>
+        </div>
+      `;
+      totalElement.innerText = '₱0.00';
+      return;
+    }
+    
+    let total = 0;
+    let html = '<div class="space-y-3">';
+    
+    cart.forEach((item, index) => {
+      const subtotal = item.price * item.quantity;
+      total += subtotal;
+      
+      html += `
+        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+          <div class="flex-1">
+            <div class="font-semibold">${item.name}</div>
+            <div class="text-sm text-gray-500">₱${item.price} x ${item.quantity}</div>
+          </div>
+          <div class="text-right">
+            <div class="font-bold text-green-600">₱${subtotal.toFixed(2)}</div>
+            <button class="remove-item text-red-500 text-sm mt-1" data-index="${index}">Remove</button>
+          </div>
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+    cartContainer.innerHTML = html;
+    totalElement.innerText = `₱${total.toFixed(2)}`;
+    
+    // Add remove functionality
+    document.querySelectorAll('.remove-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const index = parseInt(btn.dataset.index);
+        cart.splice(index, 1);
+        updateCartDisplay();
+      });
+    });
+  }
+  
+  // Payment buttons (placeholder for now)
+  document.getElementById('cash-payment-btn')?.addEventListener('click', () => {
+    if (cart.length === 0) {
+      alert('Cart is empty!');
+      return;
+    }
+    alert(`Processing Cash Payment: ${document.getElementById('cart-total').innerText}\n\nThis will create a transaction and reduce inventory.`);
+  });
+  
+  document.getElementById('gcash-payment-btn')?.addEventListener('click', () => {
+    if (cart.length === 0) {
+      alert('Cart is empty!');
+      return;
+    }
+    alert(`Processing GCash Payment: ${document.getElementById('cart-total').innerText}\n\nEnter reference number when prompted.`);
+  });
+  
+  // Enter key on barcode search
+  document.getElementById('barcode-search')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const barcode = e.target.value;
+      alert(`Searching for barcode: ${barcode}\n\nIn production, this would find and add the product automatically.`);
+      e.target.value = '';
+    }
+  });
+</script>

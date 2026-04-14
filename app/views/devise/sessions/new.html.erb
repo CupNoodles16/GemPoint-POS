@@ -1,0 +1,60 @@
+<div class="min-h-screen flex items-center justify-center p-4"
+     style="background-image: url('<%= asset_path('background.png') %>'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+  
+  <div class="w-full max-w-md relative z-10">
+    
+    <!-- Logo Sitting on Top -->
+    <div class="flex justify-center mb-0 relative z-20">
+      <div class="w-24 h-24 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden border-4 border-white">
+        <%= image_tag "Gem_point.png", class: "w-full h-full object-cover", alt: "GemPoint POS" %>
+      </div>
+    </div>
+    
+    <!-- Login Card Container -->
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl pt-10 pb-8 px-8 -mt-10">
+      
+      <h1 class="text-2xl font-bold text-center text-gray-800 mt-2">GemPoint POS</h1>
+      <p class="text-center text-gray-500 text-sm mt-1">Point of Sale System</p>
+      
+      <div class="border-b border-gray-200 my-4"></div>
+      <h2 class="text-lg font-semibold text-center text-gray-700">Sign In</h2>
+      <div class="border-b border-gray-200 my-4"></div>
+
+      <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-4 mt-4" }) do |f| %>
+
+        <div>
+          <%= f.label :email, "Email", class: "block text-gray-700 text-sm font-medium mb-1" %>
+          <%= f.email_field :email, 
+              autofocus: true, 
+              autocomplete: "email",
+              placeholder: "admin@minimart.com",
+              class: "w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" %>
+        </div>
+
+        <div>
+          <%= f.label :password, "Password", class: "block text-gray-700 text-sm font-medium mb-1" %>
+          <%= f.password_field :password, 
+              autocomplete: "current-password",
+              placeholder: "Enter your password",
+              class: "w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" %>
+        </div>
+
+        <% if devise_mapping.rememberable? %>
+          <div class="flex items-center">
+            <%= f.check_box :remember_me, class: "w-4 h-4 text-blue-600 border-gray-300 rounded" %>
+            <%= f.label :remember_me, class: "ml-2 text-sm text-gray-600" %>
+          </div>
+        <% end %>
+
+        <div>
+          <%= f.submit "Sign In", 
+              class: "w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-600 cursor-pointer transition" %>
+        </div>
+      <% end %>
+
+      <div class="mt-6 pt-3 text-center border-t border-gray-200">
+        <p class="text-xs text-gray-400">GemPoint Designed by GemPoint POS</p>
+      </div>
+    </div>
+  </div>
+</div>
