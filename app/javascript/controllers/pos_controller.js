@@ -5,8 +5,13 @@ export default class extends Controller {
   
   connect() {
     this.cart = [];
+    this.allProducts = [];
+    this.currentProducts = [];
+    this.searchTerm = '';
+    this.selectedCategory = null;
     this.updateDateTime();
     this.startDateTimeInterval();
+    this.loadProducts();
   }
   
   disconnect() {
@@ -27,6 +32,181 @@ export default class extends Controller {
     }
   }
   
+  loadProducts() {
+    const productButtons = document.querySelectorAll('.product-btn');
+    this.allProducts = Array.from(productButtons).map(btn => ({
+      id: btn.dataset.productId,
+      name: btn.dataset.productName,
+      price: parseFloat(btn.dataset.productPrice),
+      quantity: parseInt(btn.dataset.stock) || 0,
+      category_id: btn.dataset.categoryId || null,
+      barcode: btn.dataset.barcode || null  // Add this line
+    }));
+    this.currentProducts = [...this.allProducts];
+    this.renderProducts();
+  }
+  
+  renderProducts() {
+    const productsGrid = document.getElementById('products-grid');
+    if (!productsGrid) return;
+    
+    if (this.currentProducts.length === 0) {
+      productsGrid.innerHTML = '<div class="col-span-full text-center text-gray-500 py-8">No products found.</div>';
+      return;
+    }
+    
+    let html = '';
+    this.currentProducts.forEach(product => {
+      html += `
+        <button class="product-btn bg-white rounded-lg shadow p-3 hover:shadow-md active:scale-95 transition-all text-left"
+                data-action="click->pos#addToCart"
+                data-product-id="${product.id}"
+                data-product-name="${product.name}"
+                data-product-price="${product.price}"
+                data-category-id="${product.category_id || ''}"
+                data-stock="${product.quantity}"
+                data-barcode="${product.barcode || ''}">
+          <div class="text-sm font-semibold text-gray-800">${product.name}</div>
+          <div class="text-base font-bold text-green-600 mt-1">₱${product.price}</div>
+          <div class="text-xs text-gray-500 mt-1">Stock: ${product.quantity}</div>
+        </button>
+      `;
+    });
+    
+    productsGrid.innerHTML = html;
+  }
+  
+  // Sorting and Filtering Methods
+  sortProducts() {
+    const sortValue = document.getElementById('sort-select').value;
+    this.applyFiltersAndSort();
+  }
+  
+  searchProducts(event) {
+    this.searchTerm = event.target.value.toLowerCase();
+    this.applyFiltersAndSort();
+  }
+  
+  filterByCategory(event) {
+    const categoryId = event.currentTarget.dataset.categoryId;
+    this.selectedCategory = categoryId === 'all' ? null : categoryId;
+    this.closeCategoryModal();
+    this.updateActiveFiltersDisplay();
+    this.applyFiltersAndSort();
+  }
+  
+  applyFiltersAndSort() {
+    let filtered = [...this.allProducts];
+    
+    // Apply search filter
+    if (this.searchTerm) {
+      filtered = filtered.filter(product => 
+        product.name.toLowerCase().includes(this.searchTerm)
+      );
+    }
+    
+    // Apply category filter
+    if (this.selectedCategory) {
+      filtered = filtered.filter(product => product.category_id == this.selectedCategory);
+    }
+    
+    // Apply sorting
+    const sortValue = document.getElementById('sort-select')?.value || 'name_asc';
+    switch(sortValue) {
+      case 'name_asc':
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'name_desc':
+        filtered.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case 'price_asc':
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case 'price_desc':
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case 'stock_asc':
+        filtered.sort((a, b) => a.quantity - b.quantity);
+        break;
+      case 'stock_desc':
+        filtered.sort((a, b) => b.quantity - a.quantity);
+        break;
+    }
+    
+    this.currentProducts = filtered;
+    this.renderProducts();
+  }
+  
+  updateActiveFiltersDisplay() {
+    const container = document.getElementById('active-filters');
+    if (!container) return;
+    
+    let filters = [];
+    
+    if (this.selectedCategory) {
+      const categoryName = this.allProducts.find(p => p.category_id == this.selectedCategory)?.name || 
+                           document.querySelector(`button[data-category-id="${this.selectedCategory}"] span`)?.innerText || 
+                           'Category';
+      filters.push(`<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+        Category: ${categoryName}
+        <button data-action="click->pos#clearCategoryFilter" class="hover:text-purple-900">✕</button>
+      </span>`);
+    }
+    
+    if (this.searchTerm) {
+      filters.push(`<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+        Search: ${this.searchTerm}
+        <button data-action="click->pos#clearSearchFilter" class="hover:text-blue-900">✕</button>
+      </span>`);
+    }
+    
+    container.innerHTML = filters.join('');
+  }
+  
+  clearCategoryFilter() {
+    this.selectedCategory = null;
+    this.updateActiveFiltersDisplay();
+    this.applyFiltersAndSort();
+  }
+  
+  clearSearchFilter() {
+    this.searchTerm = '';
+    if (this.barcodeSearchTarget) {
+      this.barcodeSearchTarget.value = '';
+    }
+    this.updateActiveFiltersDisplay();
+    this.applyFiltersAndSort();
+  }
+  
+  clearFilters() {
+    this.searchTerm = '';
+    this.selectedCategory = null;
+    if (this.barcodeSearchTarget) {
+      this.barcodeSearchTarget.value = '';
+    }
+    document.getElementById('sort-select').value = 'name_asc';
+    this.updateActiveFiltersDisplay();
+    this.applyFiltersAndSort();
+  }
+  
+  // Category Modal Methods
+  toggleCategoryModal() {
+    const modal = document.getElementById('category-modal');
+    if (modal) modal.classList.remove('hidden');
+  }
+  
+  closeCategoryModal() {
+    const modal = document.getElementById('category-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+  
+  closeCategoryModalOnBackground(event) {
+    if (event.target === event.currentTarget) {
+      this.closeCategoryModal();
+    }
+  }
+  
+  // Original Cart Methods
   addToCart(event) {
     const btn = event.currentTarget;
     const product = {
@@ -49,7 +229,7 @@ export default class extends Controller {
     if (this.cart.length === 0) {
       this.cartItemsTarget.innerHTML = `
         <div class="text-center text-gray-400 py-12">
-          <p class="text-5xl mb-3">🛍️</p>
+          <svg class="w-16 h-16 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
           <p class="text-lg">No items in cart</p>
           <p class="text-sm mt-2">Tap products to add</p>
         </div>
@@ -68,8 +248,7 @@ export default class extends Controller {
       html += `
         <div class="cart-item bg-gray-50 rounded-xl p-3 transition-all" 
              data-item-id="${item.id}"
-             data-item-name="${item.name}"
-             data-swipe-threshold="50">
+             data-item-name="${item.name}">
           <div class="flex justify-between items-start">
             <div class="flex-1">
               <div class="font-semibold text-base text-gray-800">${item.name}</div>
@@ -80,7 +259,6 @@ export default class extends Controller {
             </div>
           </div>
           
-          <!-- Quantity Controls with Swipe Hint -->
           <div class="flex items-center justify-between mt-3 pt-2 border-t border-gray-200">
             <div class="text-xs text-gray-400">👆 Swipe left to remove</div>
             <div class="flex items-center space-x-3">
@@ -102,19 +280,15 @@ export default class extends Controller {
     html += '</div>';
     this.cartItemsTarget.innerHTML = html;
     this.cartTotalTarget.innerText = `₱${total.toFixed(2)}`;
-    
-    // Attach swipe listeners to new cart items
     this.setupSwipeListeners();
   }
   
-  // Quantity Controls
   decrementQuantity(event) {
     const index = parseInt(event.currentTarget.dataset.index);
     if (this.cart[index].quantity > 1) {
       this.cart[index].quantity--;
       this.updateCartDisplay();
     } else {
-      // If quantity is 1, ask to remove
       const item = this.cart[index];
       this.showSwipeRemoveModal(item.id, item.name);
     }
@@ -126,11 +300,9 @@ export default class extends Controller {
     this.updateCartDisplay();
   }
   
-  // Swipe Detection Methods
   setupSwipeListeners() {
     const cartItems = document.querySelectorAll('.cart-item');
     cartItems.forEach(item => {
-      // Remove existing listener to avoid duplicates
       if (item._swipeListener) return;
       this.attachSwipeListener(item);
       item._swipeListener = true;
@@ -153,9 +325,8 @@ export default class extends Controller {
   
   handleSwipe(element, startX, endX) {
     const swipeDistance = endX - startX;
-    const threshold = 50; // Minimum swipe distance in pixels
+    const threshold = 50;
     
-    // Detect left swipe (negative distance)
     if (swipeDistance < -threshold) {
       const itemId = element.dataset.itemId;
       const itemName = element.dataset.itemName;
@@ -163,7 +334,6 @@ export default class extends Controller {
     }
   }
   
-  // Show swipe removal modal
   showSwipeRemoveModal(itemId, itemName) {
     this.pendingRemoveItemId = itemId;
     this.pendingRemoveItemName = itemName;
@@ -173,7 +343,6 @@ export default class extends Controller {
       document.getElementById('swipe-item-name').innerText = itemName;
       modal.classList.remove('hidden');
     } else {
-      // Fallback if modal doesn't exist
       if (confirm(`Remove ${itemName} from cart?`)) {
         const index = this.cart.findIndex(item => item.id == itemId);
         if (index !== -1) {
@@ -184,24 +353,19 @@ export default class extends Controller {
     }
   }
   
-  // Close swipe modal
   closeSwipeModal() {
     const modal = document.getElementById('swipe-remove-modal');
-    if (modal) {
-      modal.classList.add('hidden');
-    }
+    if (modal) modal.classList.add('hidden');
     this.pendingRemoveItemId = null;
     this.pendingRemoveItemName = null;
   }
   
-  // Close swipe modal on background click
   closeSwipeModalOnBackground(event) {
     if (event.target === event.currentTarget) {
       this.closeSwipeModal();
     }
   }
   
-  // Confirm swipe removal
   confirmSwipeRemove() {
     if (this.pendingRemoveItemId) {
       const index = this.cart.findIndex(item => item.id == this.pendingRemoveItemId);
@@ -213,66 +377,204 @@ export default class extends Controller {
     this.closeSwipeModal();
   }
   
-  // Quick Cash Payment (Most common)
   processCashPayment() {
     if (this.cart.length === 0) {
-      alert('Cart is empty!');
+      this.showEmptyCartModal();
       return;
     }
     const total = this.cartTotalTarget.innerText;
-    
-    if (confirm(`Cash Payment\nAmount: ${total}\n\nClick OK to complete transaction`)) {
-      alert(`✅ Transaction completed!\n\nTotal: ${total}\nPayment Method: Cash`);
-      this.clearCart();
-    }
+    this.showSuccessModal(total, 'cash');
+    this.clearCart();
   }
   
-  // Show payment modal
+  // Show payment modal with itemized list
   showPaymentModal() {
     if (this.cart.length === 0) {
-      alert('Cart is empty!');
+      this.showEmptyCartModal();
       return;
     }
+    
     const modal = document.getElementById('payment-modal');
     const total = this.cartTotalTarget.innerText;
+    const itemCount = this.cart.reduce((sum, item) => sum + item.quantity, 0);
+    
+    // Generate itemized list HTML
+    let itemsHtml = '';
+    this.cart.forEach(item => {
+      const subtotal = item.price * item.quantity;
+      itemsHtml += `
+        <div class="flex justify-between items-center text-sm">
+          <div class="flex-1">
+            <span class="font-medium text-gray-800">${item.quantity}x</span>
+            <span class="text-gray-600 ml-1">${item.name}</span>
+          </div>
+          <div class="text-right">
+            <span class="font-semibold text-green-600">₱${subtotal.toFixed(2)}</span>
+          </div>
+        </div>
+      `;
+    });
+    
+    document.getElementById('modal-item-list').innerHTML = itemsHtml;
     document.getElementById('modal-total').innerText = total;
+    document.getElementById('modal-item-count').innerText = itemCount;
+    
     modal.classList.remove('hidden');
   }
   
-  // Close payment modal
   closeModal() {
     const modal = document.getElementById('payment-modal');
-    modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
   }
   
-  // Close payment modal when clicking background
   closeModalOnBackground(event) {
     if (event.target === event.currentTarget) {
       this.closeModal();
     }
   }
   
-  // Process payment after method selection (from modal)
+    // Process payment after method selection (from modal)
   processPayment(event) {
     const method = event.currentTarget.dataset.method;
-    const total = this.cartTotalTarget.innerText;
     
-    // Close modal
-    this.closeModal();
-    
-    if (confirm(`${method.toUpperCase()} Payment\nAmount: ${total}\n\nClick OK to complete transaction`)) {
-      alert(`✅ Transaction completed!\n\nTotal: ${total}\nPayment Method: ${method.toUpperCase()}`);
+    if (method === 'credit') {
+      // Close payment modal and show credit/IOU modal
+      this.closeModal();
+      this.showCreditModal();
+    } else {
+      // For cash, GCash, PayMaya - proceed to success
+      const total = this.cartTotalTarget.innerText;
+      this.closeModal();
+      this.showSuccessModal(total, method);
       this.clearCart();
     }
   }
   
-  // Clear cart after successful payment
+  // Show Credit / IOU Modal
+  showCreditModal() {
+    if (this.cart.length === 0) {
+      this.showEmptyCartModal();
+      return;
+    }
+    
+    const modal = document.getElementById('credit-modal');
+    const total = this.cartTotalTarget.innerText;
+    
+    // Populate itemized list
+    let itemsHtml = '';
+    this.cart.forEach(item => {
+      const subtotal = item.price * item.quantity;
+      itemsHtml += `
+        <div class="flex justify-between items-center text-sm">
+          <div class="flex-1">
+            <span class="font-medium text-gray-800">${item.quantity}x</span>
+            <span class="text-gray-600 ml-1">${item.name}</span>
+          </div>
+          <div class="text-right">
+            <span class="font-semibold text-red-600">₱${subtotal.toFixed(2)}</span>
+          </div>
+        </div>
+      `;
+    });
+    
+    document.getElementById('credit-item-list').innerHTML = itemsHtml;
+    document.getElementById('credit-total').innerText = total;
+    
+    // Set default due date to 7 days from now
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 7);
+    document.getElementById('credit-due-date').value = dueDate.toISOString().split('T')[0];
+    
+    // Clear previous form values
+    document.getElementById('credit-customer-name').value = '';
+    document.getElementById('credit-customer-phone').value = '';
+    document.getElementById('credit-notes').value = '';
+    
+    modal.classList.remove('hidden');
+  }
+  
+  // Close Credit Modal
+  closeCreditModal() {
+    const modal = document.getElementById('credit-modal');
+    modal.classList.add('hidden');
+  }
+  
+  // Close Credit Modal on background click
+  closeCreditModalOnBackground(event) {
+    if (event.target === event.currentTarget) {
+      this.closeCreditModal();
+    }
+  }
+  
+  // Confirm Credit Sale
+  confirmCreditSale() {
+    const customerName = document.getElementById('credit-customer-name').value.trim();
+    
+    if (!customerName) {
+      alert('Please enter customer name');
+      return;
+    }
+    
+    const customerPhone = document.getElementById('credit-customer-phone').value;
+    const dueDate = document.getElementById('credit-due-date').value;
+    const notes = document.getElementById('credit-notes').value;
+    const total = this.cartTotalTarget.innerText;
+    
+    // Build confirmation message
+    let message = `✅ CREDIT SALE RECORDED\n\n`;
+    message += `Customer: ${customerName}\n`;
+    if (customerPhone) message += `Contact: ${customerPhone}\n`;
+    message += `Amount: ${total}\n`;
+    if (dueDate) message += `Due Date: ${new Date(dueDate).toLocaleDateString()}\n`;
+    if (notes) message += `Notes: ${notes}\n`;
+    message += `\nItems:\n`;
+    
+    this.cart.forEach(item => {
+      const subtotal = item.price * item.quantity;
+      message += `  - ${item.quantity}x ${item.name}: ₱${subtotal.toFixed(2)}\n`;
+    });
+    
+    alert(message);
+    
+    // Close modal and clear cart
+    this.closeCreditModal();
+    this.clearCart();
+    
+    // Optional: Show success message
+    alert(`Credit sale recorded for ${customerName}. Total debt: ${total}`);
+  }
+  
+  showEmptyCartModal() {
+    const modal = document.getElementById('empty-cart-modal');
+    if (modal) modal.classList.remove('hidden');
+  }
+  
+  closeEmptyCartModal() {
+    const modal = document.getElementById('empty-cart-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+  
+  showSuccessModal(total, method) {
+    const modal = document.getElementById('success-modal');
+    if (modal) {
+      document.getElementById('success-total').innerText = total;
+      document.getElementById('success-method').innerText = method.charAt(0).toUpperCase() + method.slice(1);
+      modal.classList.remove('hidden');
+    } else {
+      alert(`✅ Payment Successful!\nTotal: ${total}\nMethod: ${method}`);
+    }
+  }
+  
+  closeSuccessModal() {
+    const modal = document.getElementById('success-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+  
   clearCart() {
     this.cart = [];
     this.updateCartDisplay();
   }
   
-  // Show Clear Cart confirmation modal
   showClearCartModal() {
     if (this.cart.length === 0) {
       alert('Cart is already empty!');
@@ -285,30 +587,25 @@ export default class extends Controller {
     
     document.getElementById('clear-cart-item-count').innerText = itemCount;
     document.getElementById('clear-cart-total').innerText = total;
-    
     modal.classList.remove('hidden');
   }
   
-  // Close Clear Cart modal
   closeClearCartModal() {
     const modal = document.getElementById('clear-cart-modal');
     modal.classList.add('hidden');
   }
   
-  // Close Clear Cart modal when clicking background
   closeClearCartModalOnBackground(event) {
     if (event.target === event.currentTarget) {
       this.closeClearCartModal();
     }
   }
   
-  // Confirm and clear cart
   confirmClearCart() {
     this.cart = [];
     this.updateCartDisplay();
     this.closeClearCartModal();
     
-    // Visual feedback - flash total red
     const totalElement = this.cartTotalTarget;
     totalElement.classList.add('text-red-500');
     setTimeout(() => {
@@ -316,12 +613,37 @@ export default class extends Controller {
       totalElement.classList.add('text-green-600');
     }, 500);
   }
-  
-  searchBarcode(event) {
+
+    searchBarcode(event) {
     if (event.key === 'Enter') {
       const barcode = event.target.value;
-      alert(`Searching for: ${barcode}\n\nIn production, this would find and add the product.`);
-      event.target.value = '';
+      // Find product by barcode
+      const product = this.allProducts.find(p => p.barcode === barcode);
+      if (product) {
+        // Add to cart
+        this.addToCartWithId(product.id);
+        event.target.value = '';
+      } else {
+        alert(`Product with barcode ${barcode} not found`);
+      }
+    }
+  }
+  
+  addToCartWithId(productId) {
+    const product = this.allProducts.find(p => p.id == productId);
+    if (product) {
+      const existing = this.cart.find(item => item.id == product.id);
+      if (existing) {
+        existing.quantity++;
+      } else {
+        this.cart.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          quantity: 1
+        });
+      }
+      this.updateCartDisplay();
     }
   }
 }
