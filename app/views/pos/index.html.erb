@@ -71,9 +71,7 @@
                  class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
         </div>
         
-        <!-- Sorting and Filtering Row -->
         <div class="flex items-center gap-2">
-          <!-- Sort Dropdown -->
           <div class="relative flex-1">
             <select id="sort-select" 
                     data-action="change->pos#sortProducts"
@@ -88,7 +86,6 @@
             <svg class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
           </div>
           
-          <!-- Category Filter Button -->
           <button id="category-filter-btn"
                   data-action="click->pos#toggleCategoryModal"
                   class="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center space-x-1 flex-shrink-0">
@@ -96,7 +93,6 @@
             <span>Category</span>
           </button>
           
-          <!-- Clear Filters Button -->
           <button id="clear-filters-btn"
                   data-action="click->pos#clearFilters"
                   class="px-3 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition flex items-center space-x-1 flex-shrink-0">
@@ -105,7 +101,6 @@
           </button>
         </div>
         
-        <!-- Active Filters Display -->
         <div id="active-filters" class="flex flex-wrap gap-1 mt-2 text-xs"></div>
       </div>
       
@@ -119,7 +114,8 @@
                       data-product-name="<%= product.name %>"
                       data-product-price="<%= product.price %>"
                       data-category-id="<%= product.category_id %>"
-                      data-stock="<%= product.quantity %>">
+                      data-stock="<%= product.quantity %>"
+                      data-barcode="<%= product.barcode %>">
                 <div class="text-sm font-semibold text-gray-800"><%= product.name %></div>
                 <div class="text-base font-bold text-green-600 mt-1">₱<%= product.price %></div>
                 <div class="text-xs text-gray-500 mt-1">Stock: <%= product.quantity %></div>
@@ -199,7 +195,6 @@
       </div>
       
       <div class="p-5 max-h-[70vh] overflow-y-auto">
-        <!-- Categories Grid - Square buttons -->
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <!-- All Products Option -->
           <button data-action="click->pos#filterByCategory" data-category-id="all" 
@@ -209,28 +204,19 @@
             <div class="text-xs text-gray-500 mt-1"><%= Product.active.count %> items</div>
           </button>
           
-          <!-- Category List as Square Buttons -->
+          <!-- Category List -->
           <% Category.where(its_active: true).order(:name).each do |category| %>
             <button data-action="click->pos#filterByCategory" data-category-id="<%= category.id %>" 
                     class="category-option bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-4 text-center hover:shadow-lg transition-all hover:scale-105 active:scale-95">
               <div class="text-4xl mb-2">
-                <% case category.name %>
-                <% when 'Beverages' %>
-                  🥤
-                <% when 'Snacks' %>
-                  🍿
-                <% when 'Canned Goods' %>
-                  🥫
-                <% when 'Noodles' %>
-                  🍜
-                <% when 'Rice & Grains' %>
-                  🍚
-                <% when 'Dairy' %>
-                  🥛
-                <% when 'Personal Care' %>
-                  🧴
-                <% else %>
-                  📦
+                <% if category.name == 'Beverages' %>🥤
+                <% elsif category.name == 'Snacks' %>🍿
+                <% elsif category.name == 'Canned Goods' %>🥫
+                <% elsif category.name == 'Noodles' %>🍜
+                <% elsif category.name == 'Rice & Grains' %>🍚
+                <% elsif category.name == 'Dairy' %>🥛
+                <% elsif category.name == 'Personal Care' %>🧴
+                <% else %>📦
                 <% end %>
               </div>
               <div class="font-semibold text-gray-800 text-sm"><%= category.name %></div>
@@ -242,7 +228,7 @@
     </div>
   </div>
 
-  <!-- PAYMENT METHOD MODAL WITH ITEMIZED LIST -->
+  <!-- PAYMENT METHOD MODAL -->
   <div id="payment-modal" 
        class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden"
        data-action="click->pos#closeModalOnBackground">
@@ -261,14 +247,10 @@
       </div>
       
       <div class="p-5">
-        <!-- Itemized List - Scrollable -->
         <div class="bg-gray-50 rounded-xl p-3 mb-4 max-h-48 overflow-y-auto">
-          <div id="modal-item-list" class="space-y-2">
-            <!-- Items will be inserted here -->
-          </div>
+          <div id="modal-item-list" class="space-y-2"></div>
         </div>
         
-        <!-- Summary Row -->
         <div class="bg-gray-100 rounded-xl p-3 mb-4">
           <div class="flex justify-between items-center">
             <span class="text-gray-600 font-medium">Total:</span>
@@ -280,37 +262,168 @@
           </div>
         </div>
         
-        <!-- Payment Methods - Square Grid -->
         <p class="text-sm font-medium text-gray-700 mb-2">Select Payment Method:</p>
         <div class="grid grid-cols-2 gap-3">
-          <!-- Cash -->
           <button data-action="click->pos#processPayment" data-method="cash" 
                   class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-4 text-center hover:shadow-lg transition-all hover:scale-105 active:scale-95">
             <div class="text-3xl mb-1">💵</div>
             <div class="font-semibold text-sm">Cash</div>
           </button>
           
-          <!-- GCash -->
           <button data-action="click->pos#processPayment" data-method="gcash" 
                   class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-4 text-center hover:shadow-lg transition-all hover:scale-105 active:scale-95">
             <div class="text-3xl mb-1">📱</div>
             <div class="font-semibold text-sm">GCash</div>
           </button>
           
-          <!-- PayMaya -->
           <button data-action="click->pos#processPayment" data-method="paymaya" 
                   class="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-xl p-4 text-center hover:shadow-lg transition-all hover:scale-105 active:scale-95">
             <div class="text-3xl mb-1">💳</div>
             <div class="font-semibold text-sm">PayMaya</div>
           </button>
           
-          <!-- Credit (Debt) -->
           <button data-action="click->pos#processPayment" data-method="credit" 
                   class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl p-4 text-center hover:shadow-lg transition-all hover:scale-105 active:scale-95">
             <div class="text-3xl mb-1">📝</div>
             <div class="font-semibold text-sm">Credit</div>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CASH PAYMENT CONFIRMATION MODAL - TABLET OPTIMIZED -->
+  <div id="cash-confirm-modal" 
+       class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4"
+       data-action="click->pos#closeCashConfirmModalOnBackground">
+    
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-auto overflow-hidden transition-all duration-300 ease-out">
+      
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-green-500 to-green-600 px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-xl font-bold text-white">Cash Payment</h3>
+            <p class="text-green-100 text-sm mt-1">Enter amount to complete transaction</p>
+          </div>
+          <button data-action="click->pos#closeCashConfirmModal" class="text-white hover:text-green-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Two Column Layout for Tablet -->
+      <div class="flex flex-col md:flex-row">
+        
+        <!-- LEFT COLUMN: Keypad -->
+        <div class="md:w-1/2 bg-gray-50 p-5">
+          <div class="text-center mb-4">
+            <div class="bg-white rounded-xl p-4 shadow-sm">
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Amount Received</div>
+              <div class="text-4xl font-bold text-green-600" id="keypad-amount">₱0.00</div>
+            </div>
+          </div>
+          
+          <!-- Numeric Keypad -->
+          <div class="grid grid-cols-3 gap-3 mb-4">
+            <button data-action="click->pos#keypadPress" data-value="7" 
+                    class="keypad-btn bg-white hover:bg-gray-100 active:scale-95 text-2xl font-semibold text-gray-800 py-5 rounded-xl shadow-sm transition-all">7</button>
+            <button data-action="click->pos#keypadPress" data-value="8" 
+                    class="keypad-btn bg-white hover:bg-gray-100 active:scale-95 text-2xl font-semibold text-gray-800 py-5 rounded-xl shadow-sm transition-all">8</button>
+            <button data-action="click->pos#keypadPress" data-value="9" 
+                    class="keypad-btn bg-white hover:bg-gray-100 active:scale-95 text-2xl font-semibold text-gray-800 py-5 rounded-xl shadow-sm transition-all">9</button>
+            <button data-action="click->pos#keypadPress" data-value="4" 
+                    class="keypad-btn bg-white hover:bg-gray-100 active:scale-95 text-2xl font-semibold text-gray-800 py-5 rounded-xl shadow-sm transition-all">4</button>
+            <button data-action="click->pos#keypadPress" data-value="5" 
+                    class="keypad-btn bg-white hover:bg-gray-100 active:scale-95 text-2xl font-semibold text-gray-800 py-5 rounded-xl shadow-sm transition-all">5</button>
+            <button data-action="click->pos#keypadPress" data-value="6" 
+                    class="keypad-btn bg-white hover:bg-gray-100 active:scale-95 text-2xl font-semibold text-gray-800 py-5 rounded-xl shadow-sm transition-all">6</button>
+            <button data-action="click->pos#keypadPress" data-value="1" 
+                    class="keypad-btn bg-white hover:bg-gray-100 active:scale-95 text-2xl font-semibold text-gray-800 py-5 rounded-xl shadow-sm transition-all">1</button>
+            <button data-action="click->pos#keypadPress" data-value="2" 
+                    class="keypad-btn bg-white hover:bg-gray-100 active:scale-95 text-2xl font-semibold text-gray-800 py-5 rounded-xl shadow-sm transition-all">2</button>
+            <button data-action="click->pos#keypadPress" data-value="3" 
+                    class="keypad-btn bg-white hover:bg-gray-100 active:scale-95 text-2xl font-semibold text-gray-800 py-5 rounded-xl shadow-sm transition-all">3</button>
+            <button data-action="click->pos#keypadPress" data-value="00" 
+                    class="keypad-btn bg-white hover:bg-gray-100 active:scale-95 text-xl font-semibold text-gray-800 py-5 rounded-xl shadow-sm transition-all">00</button>
+            <button data-action="click->pos#keypadPress" data-value="0" 
+                    class="keypad-btn bg-white hover:bg-gray-100 active:scale-95 text-2xl font-semibold text-gray-800 py-5 rounded-xl shadow-sm transition-all">0</button>
+            <!-- Backspace/Delete Button -->
+            <button data-action="click->pos#keypadBackspace" 
+                    class="keypad-btn bg-orange-100 hover:bg-orange-200 active:scale-95 text-orange-700 py-5 rounded-xl shadow-sm transition-all flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"/>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="grid grid-cols-2 gap-3">
+            <button data-action="click->pos#keypadClear" 
+                    class="bg-yellow-100 text-yellow-700 py-4 rounded-xl text-base font-semibold hover:bg-yellow-200 transition-all active:scale-95">
+              Clear All
+            </button>
+            <button id="confirm-cash-payment-btn" 
+                    data-action="click->pos#confirmCashPayment"
+                    class="bg-green-500 text-white py-4 rounded-xl text-base font-semibold hover:bg-green-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+              Confirm Payment
+            </button>
+          </div>
+        </div>
+        
+        <!-- RIGHT COLUMN: Payment Summary -->
+        <div class="md:w-1/2 bg-white p-5">
+          <!-- Items List -->
+          <div class="mb-4">
+            <h4 class="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">Items</h4>
+            <div class="bg-gray-50 rounded-xl p-3 max-h-48 overflow-y-auto">
+              <div id="cash-confirm-item-list" class="space-y-2"></div>
+            </div>
+          </div>
+          
+          <!-- Totals -->
+          <div class="bg-gray-100 rounded-xl p-4 mb-4">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-gray-600">Subtotal:</span>
+              <span class="text-lg font-semibold text-gray-800" id="cash-confirm-subtotal">₱0.00</span>
+            </div>
+            <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+              <span class="text-gray-800 font-bold text-lg">TOTAL:</span>
+              <span class="text-2xl font-bold text-green-600" id="cash-confirm-total">₱0.00</span>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 mt-1">
+              <span>Total Items:</span>
+              <span id="cash-confirm-item-count">0</span>
+            </div>
+          </div>
+          
+          <!-- Amount Received Display (Live update) -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Amount Received</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl">₱</span>
+              <input type="text" id="cash-amount-received" 
+                    class="w-full pl-8 pr-4 py-4 text-2xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-400 bg-gray-50"
+                    placeholder="0.00"
+                    readonly>
+            </div>
+          </div>
+          
+          <!-- Change Display -->
+          <div class="bg-green-50 rounded-xl p-4 mb-4 border-2 border-green-200">
+            <div class="flex justify-between items-center">
+              <span class="text-gray-700 font-semibold text-base">Change:</span>
+              <span class="text-2xl font-bold text-green-600" id="cash-change-amount">₱0.00</span>
+            </div>
+          </div>
+          
+          <!-- Cancel Button Only (Confirm moved to left panel) -->
+          <button data-action="click->pos#closeCashConfirmModal" 
+                  class="w-full bg-gray-200 text-gray-700 py-4 rounded-xl text-base font-medium hover:bg-gray-300 transition-all active:scale-95">
+            Cancel
+          </button>
+        </div>
+        
       </div>
     </div>
   </div>
@@ -334,14 +447,10 @@
       </div>
       
       <div class="p-5">
-        <!-- Itemized List - Scrollable -->
         <div class="bg-gray-50 rounded-xl p-3 mb-4 max-h-40 overflow-y-auto">
-          <div id="credit-item-list" class="space-y-2">
-            <!-- Items will be inserted here -->
-          </div>
+          <div id="credit-item-list" class="space-y-2"></div>
         </div>
         
-        <!-- Total Amount -->
         <div class="bg-gray-100 rounded-xl p-3 mb-4">
           <div class="flex justify-between items-center">
             <span class="text-gray-600 font-medium">Total Debt:</span>
@@ -349,7 +458,6 @@
           </div>
         </div>
         
-        <!-- Customer Information Form -->
         <div class="space-y-3">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
@@ -379,42 +487,44 @@
           </div>
         </div>
         
-        <!-- Action Buttons -->
         <div class="flex gap-3 mt-5">
           <button data-action="click->pos#closeCreditModal" 
-                  class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl text-base font-medium hover:bg-gray-300 transition">
-            Cancel
-          </button>
+                  class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl text-base font-medium hover:bg-gray-300 transition">Cancel</button>
           <button data-action="click->pos#confirmCreditSale" 
-                  class="flex-1 bg-red-500 text-white py-3 rounded-xl text-base font-semibold hover:bg-red-600 transition">
-            Confirm Credit Sale
-          </button>
+                  class="flex-1 bg-red-500 text-white py-3 rounded-xl text-base font-semibold hover:bg-red-600 transition">Confirm Credit Sale</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- TRANSACTION SUCCESS MODAL -->
+  <!-- RECEIPT STYLE SUCCESS MODAL -->
   <div id="success-modal" 
        class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden"
        data-action="click->pos#closeSuccessModal">
     
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-xs mx-4 overflow-hidden transform transition-all">
-      <div class="bg-gradient-to-r from-green-500 to-green-600 px-5 py-4 text-center">
-        <svg class="w-12 h-12 mx-auto text-white mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <h3 class="text-xl font-bold text-white">Payment Successful!</h3>
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden transform transition-all max-h-[90vh] overflow-y-auto">
+      <div class="bg-gradient-to-r from-green-500 to-green-600 px-5 py-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <h3 class="text-lg font-bold text-white">Payment Successful!</h3>
+          </div>
+          <button data-action="click->pos#closeSuccessModal" class="text-white hover:text-green-100">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
       </div>
       
-      <div class="p-5 text-center">
-        <p class="text-gray-600 text-sm mb-2">Transaction completed successfully.</p>
-        <div class="bg-gray-50 rounded-lg p-3 mb-3">
-          <p class="text-xs text-gray-500">Total Paid</p>
-          <p class="text-2xl font-bold text-green-600" id="success-total">₱0.00</p>
-          <p class="text-xs text-gray-400 mt-1" id="success-method">Cash</p>
-        </div>
+      <div id="receipt-content" class="p-5">
+        <!-- Receipt content will be inserted here -->
+      </div>
+      
+      <div class="border-t border-gray-100 px-5 py-3 bg-gray-50">
         <button data-action="click->pos#closeSuccessModal" 
                 class="w-full bg-green-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition">
-          Continue
+          Close
         </button>
       </div>
     </div>
@@ -435,9 +545,7 @@
         <p class="text-gray-600 text-sm mb-4">No items in cart to process payment.</p>
         <p class="text-gray-400 text-xs mb-4">Please add products to continue.</p>
         <button data-action="click->pos#closeEmptyCartModal" 
-                class="w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition">
-          OK
-        </button>
+                class="w-full bg-blue-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition">OK</button>
       </div>
     </div>
   </div>
@@ -467,13 +575,9 @@
       
       <div class="border-t border-gray-100 px-5 py-3 bg-gray-50 flex gap-2">
         <button data-action="click->pos#closeClearCartModal" 
-                class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition">
-          Cancel
-        </button>
+                class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition">Cancel</button>
         <button data-action="click->pos#confirmClearCart" 
-                class="flex-1 bg-red-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition">
-          Yes, Clear
-        </button>
+                class="flex-1 bg-red-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition">Yes, Clear</button>
       </div>
     </div>
   </div>
@@ -503,13 +607,9 @@
       
       <div class="border-t border-gray-100 px-5 py-3 bg-gray-50 flex gap-2">
         <button data-action="click->pos#closeSwipeModal" 
-                class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition">
-          Cancel
-        </button>
+                class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-300 transition">Cancel</button>
         <button data-action="click->pos#confirmSwipeRemove" 
-                class="flex-1 bg-red-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition">
-          Yes, Remove
-        </button>
+                class="flex-1 bg-red-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition">Yes, Remove</button>
       </div>
     </div>
   </div>
